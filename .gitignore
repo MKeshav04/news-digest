@@ -21,3 +21,6 @@ desktop.ini
 
 # Type-checker cache
 .mypy_cache/
+
+# Personal notes
+learning.md
