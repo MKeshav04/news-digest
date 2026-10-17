@@ -1,0 +1,23 @@
+# Secrets — never commit
+.env
+
+# Virtualenv
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Local scratch
+*.log
+
+# Type-checker cache
+.mypy_cache/
