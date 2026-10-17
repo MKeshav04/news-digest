@@ -60,6 +60,10 @@ Built and verified by hand in the working session:
 - `digest.py` — fetches 3 feeds, filters last 24h, caps 3 per source, sorts
   newest-first, sends an HTML-formatted Telegram message. **Working.**
 
+**Update 2026-10-18: Steps A–E are done and live.** Runs daily on GitHub
+Actions (github.com/MKeshav04/news-digest); first cloud run succeeded.
+See README.md for how everything works. Remaining: Steps F and G.
+
 ---
 
 ## 3. SOURCES — decided, with real measured data
