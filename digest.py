@@ -31,6 +31,20 @@ NO_SUMMARY = {"Lobsters"}
 SEEN_FILE = Path(__file__).parent / "seen.json"
 SEEN_LIMIT = 500
 
+# GitHub sometimes drops scheduled runs, so the workflow has backup slots.
+# This file records the IST date of the last successful send, so the
+# backups skip once one of them has delivered.
+LAST_SENT_FILE = Path(__file__).parent / "last_sent.txt"
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def today_ist():
+    return datetime.now(IST).date().isoformat()
+
+
+def already_sent_today():
+    return LAST_SENT_FILE.exists() and LAST_SENT_FILE.read_text().strip() == today_ist()
+
 
 def load_seen():
     if not SEEN_FILE.exists():
@@ -119,7 +133,7 @@ def link_html(item):
 
 def build_message(items, problems):
     top, rest = split_tiers(items)
-    lines = [f"<b>Tech digest — {datetime.now().strftime('%d %b')}</b>", ""]
+    lines = [f"<b>Tech digest — {datetime.now(IST).strftime('%d %b')}</b>", ""]
 
     if not items:
         lines.append(f"No new stories in the last {LOOKBACK_HOURS} hours.")
@@ -185,12 +199,19 @@ def main():
 
     # Only reached if send() didn't raise — a failed send marks nothing as seen.
     save_seen(seen + [i["link"] for i in new_items])
+    LAST_SENT_FILE.write_text(today_ist() + "\n")
     print(f"seen.json now holds {len(load_seen())} links")
 
 
 def run():
     if not TOKEN or not CHAT_ID:
         raise SystemExit("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing — fill them in .env")
+
+    # GITHUB_EVENT_NAME is set by GitHub Actions: "schedule" for timed runs,
+    # "workflow_dispatch" for the manual button (which always sends).
+    if os.environ.get("GITHUB_EVENT_NAME") == "schedule" and already_sent_today():
+        print(f"Already sent today ({today_ist()}) — skipping backup run.")
+        return
 
     try:
         main()

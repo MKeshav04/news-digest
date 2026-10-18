@@ -1,8 +1,15 @@
 name: Daily digest
 
 on:
+  # Cron here is ALWAYS UTC (IST = UTC + 5:30). GitHub can delay or silently
+  # drop scheduled runs, so there are backup slots. The first one that runs
+  # sends the digest; the rest see last_sent.txt and skip.
+  # Odd minutes on purpose: :00 and :30 are GitHub's busiest (most dropped) times.
   schedule:
-    - cron: "30 1 * * *"   # 01:30 UTC = 07:00 IST. Cron here is ALWAYS UTC.
+    - cron: "23 1 * * *"   # 06:53 IST — main slot
+    - cron: "53 1 * * *"   # 07:23 IST — backup
+    - cron: "53 2 * * *"   # 08:23 IST — backup
+    - cron: "23 4 * * *"   # 09:53 IST — last backup
   workflow_dispatch:        # adds a "Run workflow" button for manual runs
 
 # Lets the job push the updated seen.json back to the repo.
@@ -22,6 +29,8 @@ jobs:
     steps:
       - name: Get the code
         uses: actions/checkout@v5
+        with:
+          ref: main   # latest commit, so a backup run sees the last_sent.txt an earlier run pushed
 
       - name: Install Python
         uses: actions/setup-python@v6
@@ -38,10 +47,10 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
-      - name: Save seen.json back to the repo
+      - name: Save state back to the repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add seen.json
-          git diff --staged --quiet || git commit -m "Update seen.json"
+          git add seen.json last_sent.txt
+          git diff --staged --quiet || git commit -m "Update digest state"
           git push
